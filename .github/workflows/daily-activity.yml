@@ -2,28 +2,37 @@ name: Daily Activity Generator
 
 on:
   schedule:
-    # Runs every day at 3 different times (UTC)
-    - cron: "0 6 * * *"  # 6:00 UTC
-    - cron: "0 12 * * *" # 12:00 UTC
-    - cron: "0 18 * * *" # 18:00 UTC
-  workflow_dispatch: # Allows manual triggering
+    - cron: "0 6 * * *"
+    - cron: "0 12 * * *"
+    - cron: "0 18 * * *"
+  workflow_dispatch:
 
 jobs:
   generate-activity:
     runs-on: ubuntu-latest
     
+    # Add permissions for the workflow
+    permissions:
+      contents: write  # Allows writing to repository contents
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}  # Use the built-in token
+
+      - name: Verify file exists
+        run: ls -la && pwd && test -f generate_activity.py || echo "Script not found!"
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-          
+
       - name: Generate commits
-        run: python generate_activity.py
-        
+        run: python generate_activity.py || echo "Script execution failed!"
+
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
